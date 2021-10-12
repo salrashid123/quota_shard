@@ -15,6 +15,49 @@ Anyway, if you've read this so far...but i should say
 > This repo is *not* supported by Google
 
 
+in code, use module `"github.com/salrashid123/quota_shard"`
+
+and set the interceptors directly when constructing the client
+
+```golang
+var (
+	projectID     = "qprojecta"
+	quotaProjects = []string{"qprojectb", "qprojectc"}
+)
+
+...
+	ctx := context.Background()
+	client, err := pubsub.NewClient(ctx, projectID, option.WithGRPCDialOption(grpc.WithUnaryInterceptor(quota.NewQuotaUnaryHandler(&quota.QuotaHandlerConfig{
+		Projects: quotaProjects,
+	}))), option.WithGRPCDialOption(grpc.WithStreamInterceptor(quota.NewQuotaStreamingHandler(&quota.QuotaHandlerConfig{
+		Projects: quotaProjects,
+	}))))
+	if err != nil {
+		fmt.Printf("Could not create pubsub Client: %v", err)
+		return
+	}
+```
+
+If you want to set this individually per rpc:
+
+```golang
+	newCtx := context.WithValue(ctx, quota.ClientMetadataKey(quota.QuotaProjectKey), "PROJECT_B")
+	topics := client.Topics(newCtx)
+	for {
+		topic, err := topics.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			fmt.Printf("Error listing topics %v", err)
+			return
+		}
+		fmt.Println(topic)
+	}
+```
+
+### Example Setup
+
 If your ADC is using _user credentials_, the first step is to remove the `quota_project_id` value in the ADC config if you are using your own user-login
 
 ```bash
