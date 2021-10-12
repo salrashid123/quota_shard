@@ -1,4 +1,4 @@
-module quota
+module github.com/salrashid123/quota_shard
 
 go 1.17
 
